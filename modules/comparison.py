@@ -21,7 +21,7 @@ def create_site(name, latitude, longitude):
     )
 
 
-def run_mission_comparison():
+def run_mission_comparison(scenario):
 
     st.title("🌕 Mission Comparison")
 
@@ -31,15 +31,15 @@ def run_mission_comparison():
     )
 
     sites = [
-        create_site("Site A", -89.5, 30.0),
-        create_site("Site B", -88.0, 45.0),
-        create_site("Site C", -87.0, 60.0)
-    ]
+    scenario,
+    create_site("Site B", -88.0, 45.0),
+    create_site("Site C", -87.0, 60.0)
+]
 
     # Mission Scoring
     scoring_inputs = [
         {
-            "name": "Site A",
+            "name": scenario.site_name,
             "solar_score": 80,
             "terrain_score": 90,
             "safety_score": 85
@@ -97,11 +97,13 @@ def run_mission_comparison():
     # Mission Recommendation
     best_site = scoring_results.iloc[0]
 
-    st.success(
-        f"Recommended Landing Site: "
-        f"{best_site['Landing Site']} "
-        f"(Score: {best_site['Overall Score']})"
-    )
+    st.info(
+    f"Demo Scoring Leader: "
+    f"{best_site['Landing Site']} "
+    f"(Demo Score: {best_site['Overall Score']}). "
+    "This ranking uses illustrative scores, "
+    "not validated lunar mission data."
+)
 
     st.warning(
         "DEMO MODE: Solar values are artificial "

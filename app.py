@@ -2,6 +2,7 @@
 import streamlit as st
 from modules.solar import render_solar_analysis
 from modules.landing_sites import render_landing_site_selection
+from modules.comparison import run_mission_comparison
 
 st.set_page_config(
     page_title="LUNA-NAVI",
@@ -53,15 +54,26 @@ solar_tab, earth_tab, comparison_tab, visual_tab = st.tabs([
 ])
 
 with solar_tab:
-     render_solar_analysis(scenario)
+    if scenario is not None:
+        render_solar_analysis(scenario)
+    else:
+        st.warning(
+            "Please select and confirm a landing site "
+            "before running Solar Analysis."
+        )
 
 with earth_tab:
     st.header("Earth Visibility Analysis")
     st.info("Irven's communication analysis will appear here.")
 
 with comparison_tab:
-    st.header("Mission Comparison")
-    st.info("Chiew's landing site comparison will appear here.")
+    if scenario is not None:
+        run_mission_comparison(scenario)
+    else:
+        st.info(
+            "Please select and submit a landing site "
+            "before starting Mission Comparison."
+        )
 
 with visual_tab:
     st.header("3D Lunar Visualization")

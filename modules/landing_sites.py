@@ -7,7 +7,7 @@ from datetime import date, datetime, time, timezone
 
 
 # =====================================================
-# 1. NASA LUNAR SOUTH POLE SITE CATALOGUE
+# 1. LUNAR SOUTH POLE LANDING SITE CATALOGUE
 # =====================================================
 
 SOUTH_POLE_SITES = {
@@ -156,6 +156,7 @@ def validate_latitude(latitude):
     try:
         value = float(latitude)
         valid = math.isfinite(value)
+
     except (TypeError, ValueError):
         valid = False
         value = 0
@@ -178,6 +179,7 @@ def validate_longitude(longitude):
     try:
         value = float(longitude)
         valid = math.isfinite(value)
+
     except (TypeError, ValueError):
         valid = False
         value = 0
@@ -205,7 +207,7 @@ def validate_landing_site(site_name, latitude, longitude):
 
 
 # =====================================================
-# 4. CREATE UTC DATETIME
+# 4. CREATE LANDING DATETIME (UTC)
 # =====================================================
 
 def create_landing_datetime(landing_date, landing_time):
@@ -235,17 +237,48 @@ def create_landing_scenario(site, landing_date, landing_time):
 
 
 # =====================================================
-# 6. MAIN LANDING SITE SELECTION FORM
+# 6. MAIN LANDING SITE SELECTION
 # =====================================================
 
 def render_landing_site_selection():
 
     st.title("🌙 Landing Site Selection")
 
-    st.write(
-        "Select a lunar south-pole landing-site feature "
-        "and enter the planned landing schedule."
-    )
+    # -------------------------------------------------
+    # WHY CHOOSE THE LUNAR SOUTH POLE?
+    # -------------------------------------------------
+
+    st.markdown("### 🌑 Why Choose the Lunar South Pole?")
+
+    reasons = [
+        (
+            "💧 Water Ice",
+            "Potential source of water for future missions."
+        ),
+        (
+            "☀️ Solar Energy",
+            "Extended sunlight in selected areas."
+        ),
+        (
+            "🔬 Scientific Research",
+            "Valuable opportunities to study the Moon."
+        ),
+        (
+            "🚀 Future Exploration",
+            "Supports long-term lunar missions."
+        )
+    ]
+
+    reason_columns = st.columns(4)
+
+    for column, (title, description) in zip(reason_columns, reasons):
+
+        with column:
+
+            with st.container(border=True):
+
+                st.markdown(f"**{title}**")
+                st.caption(description)
 
     st.caption(
         "LUNA-NAVI | Lunar Landing Site Navigator"
@@ -253,70 +286,96 @@ def render_landing_site_selection():
 
     st.divider()
 
+    # -------------------------------------------------
+    # SESSION STATE
+    # -------------------------------------------------
+
     if "landing_scenario" not in st.session_state:
         st.session_state["landing_scenario"] = None
 
+    # -------------------------------------------------
+    # 1. SOUTH POLE LANDING SITE
+    # -------------------------------------------------
+
+    st.subheader("1. South Pole Landing Site")
+
     site_labels = list(SOUTH_POLE_SITES.keys())
 
-    # -------------------------------
-    # INPUT FORM
-    # -------------------------------
+    selected_label = st.selectbox(
+        "Select Landing Site",
+        options=site_labels,
+        index=1,
+        key="selected_landing_site"
+    )
+
+    selected_site = SOUTH_POLE_SITES[selected_label]
+
+    site_code = selected_site["code"]
+
+    # -------------------------------------------------
+    # 2. SITE INFORMATION
+    # -------------------------------------------------
+
+    st.text_input(
+        "Site Code",
+        value=selected_site["code"],
+        disabled=True,
+        key=f"site_code_{site_code}"
+    )
+
+    st.text_input(
+        "Landing-Site Name",
+        value=selected_site["name"],
+        disabled=True,
+        key=f"site_name_{site_code}"
+    )
+
+    # -------------------------------------------------
+    # 3. LUNAR COORDINATES
+    # -------------------------------------------------
+
+    st.subheader("2. Lunar Coordinates")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.number_input(
+            "Latitude (°)",
+            value=float(selected_site["latitude"]),
+            format="%.5f",
+            disabled=True,
+            key=f"latitude_{site_code}"
+        )
+
+    with col2:
+
+        st.number_input(
+            "Longitude (°)",
+            value=float(selected_site["longitude"]),
+            format="%.5f",
+            disabled=True,
+            key=f"longitude_{site_code}"
+        )
+
+    st.caption(
+        "South and west coordinates are negative."
+    )
+
+    st.divider()
+
+    # -------------------------------------------------
+    # 4. LANDING SCHEDULE
+    # -------------------------------------------------
+
+    st.subheader("3. Landing Schedule")
 
     with st.form("luna_landing_site_form"):
-
-        st.subheader("1. South Pole Landing Site")
-
-        selected_label = st.selectbox(
-            "Select Landing Site",
-            site_labels,
-            index=1
-        )
-
-        selected_site = SOUTH_POLE_SITES[selected_label]
-
-        st.text_input(
-            "Site Code",
-            value=selected_site["code"],
-            disabled=True
-        )
-
-        st.text_input(
-            "Landing-Site Name",
-            value=selected_site["name"],
-            disabled=True
-        )
-
-        st.subheader("2. Lunar Coordinates")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.number_input(
-                "Latitude (°)",
-                value=float(selected_site["latitude"]),
-                format="%.5f",
-                disabled=True
-            )
-
-        with col2:
-            st.number_input(
-                "Longitude (°)",
-                value=float(selected_site["longitude"]),
-                format="%.5f",
-                disabled=True
-            )
-
-        st.caption(
-            "South and west coordinates are negative."
-        )
-
-        st.divider()
-
-        st.subheader("3. Landing Schedule")
 
         col3, col4 = st.columns(2)
 
         with col3:
+
             landing_date = st.date_input(
                 "Landing Date",
                 value=date.today(),
@@ -324,6 +383,7 @@ def render_landing_site_selection():
             )
 
         with col4:
+
             landing_time = st.time_input(
                 "Landing Time (UTC)",
                 value=time(0, 0),
@@ -335,9 +395,9 @@ def render_landing_site_selection():
             use_container_width=True
         )
 
-    # -------------------------------
-    # PROCESS SUBMISSION
-    # -------------------------------
+    # -------------------------------------------------
+    # 5. PROCESS SUBMISSION
+    # -------------------------------------------------
 
     if submitted:
 
@@ -351,7 +411,9 @@ def render_landing_site_selection():
 
             st.session_state["landing_scenario"] = None
 
-            st.error("Please correct the following errors:")
+            st.error(
+                "Please correct the following errors:"
+            )
 
             for error in errors:
                 st.warning(error)
@@ -366,9 +428,9 @@ def render_landing_site_selection():
 
         st.session_state["landing_scenario"] = scenario
 
-    # -------------------------------
-    # DISPLAY RESULT
-    # -------------------------------
+    # -------------------------------------------------
+    # 6. DISPLAY RESULT
+    # -------------------------------------------------
 
     scenario = st.session_state["landing_scenario"]
 
@@ -410,6 +472,10 @@ def render_landing_site_selection():
         )
     )
 
+    # -------------------------------------------------
+    # 7. ADDITIONAL INFORMATION
+    # -------------------------------------------------
+
     with st.expander("Data Source and Information"):
 
         st.write(
@@ -428,4 +494,3 @@ def render_landing_site_selection():
 # =====================================================
 # END OF LANDING SITE SELECTION MODULE
 # =====================================================
-

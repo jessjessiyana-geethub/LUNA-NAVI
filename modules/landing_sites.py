@@ -7,7 +7,7 @@ from datetime import date, datetime, time, timezone
 
 
 # =====================================================
-# 1. NASA LUNAR SOUTH POLE SITE CATALOGUE
+# 1. LUNAR SOUTH POLE LANDING SITE CATALOGUE
 # =====================================================
 
 SOUTH_POLE_SITES = {
@@ -17,96 +17,112 @@ SOUTH_POLE_SITES = {
         "latitude": -89.4632,
         "longitude": -137.49
     },
+
     "Site04 — Shackleton Rim": {
         "code": "Site04",
         "name": "Shackleton Rim",
         "latitude": -89.7668,
         "longitude": -171.87
     },
+
     "Site06 — Nobile Rim 1": {
         "code": "Site06",
         "name": "Nobile Rim 1",
         "latitude": -85.4381,
         "longitude": 37.36667
     },
+
     "Site07 — Peak Near Shackleton": {
         "code": "Site07",
         "name": "Peak Near Shackleton",
         "latitude": -88.8110,
         "longitude": 123.6901
     },
+
     "Site11 — de Gerlache Rim 1": {
         "code": "Site11",
         "name": "de Gerlache Rim 1",
         "latitude": -88.6834,
         "longitude": -67.9321
     },
+
     "Site20 — Leibnitz Beta Plateau": {
         "code": "Site20",
         "name": "Leibnitz Beta Plateau",
         "latitude": -85.4266,
         "longitude": 31.74276
     },
+
     "Site20v2 — Leibnitz Beta Plateau Extended": {
         "code": "Site20v2",
         "name": "Leibnitz Beta Plateau Extended",
         "latitude": -85.4266,
         "longitude": 31.74276
     },
+
     "Site23 — Malapert Massif": {
         "code": "Site23",
         "name": "Malapert Massif",
         "latitude": -85.9948,
         "longitude": -0.23578
     },
+
     "Site42 — de Gerlache-Kocher Massif": {
         "code": "Site42",
         "name": "de Gerlache-Kocher Massif",
         "latitude": -85.8296,
         "longitude": -116.322
     },
+
     "NPA — Cabeus Exterior Wall 1": {
         "code": "NPA",
         "name": "Cabeus Exterior Wall 1",
         "latitude": -86.9243,
         "longitude": -71.5651
     },
+
     "NPB — Amundsen 1": {
         "code": "NPB",
         "name": "Amundsen 1",
         "latitude": -83.9046,
         "longitude": 89.53545
     },
+
     "NPC — Idelson L Crater 1": {
         "code": "NPC",
         "name": "Idelson L Crater 1",
         "latitude": -84.5397,
         "longitude": 126.9045
     },
+
     "NPD — Malapert Crater 1": {
         "code": "NPD",
         "name": "Malapert Crater 1",
         "latitude": -84.8034,
         "longitude": 8.387032
     },
+
     "Shoemaker": {
         "code": "Shoemaker",
         "name": "Shoemaker",
         "latitude": -87.1835,
         "longitude": 62.83502
     },
+
     "SL2 — de Gerlache Rim 2": {
         "code": "SL2",
         "name": "de Gerlache Rim 2",
         "latitude": -88.2300,
         "longitude": -64.6284
     },
+
     "SL3 — Connecting Ridge Extension": {
         "code": "SL3",
         "name": "Connecting Ridge Extension",
         "latitude": -89.0324,
         "longitude": -101.999
     },
+
     "LM8 — Shoemaker Rim F": {
         "code": "LM8",
         "name": "Shoemaker Rim F",
@@ -138,13 +154,19 @@ def validate_site_name(site_name):
     errors = []
 
     if not site_name or not site_name.strip():
-        errors.append("Landing-site name cannot be empty.")
+        errors.append(
+            "Landing-site name cannot be empty."
+        )
 
     elif len(site_name.strip()) < 2:
-        errors.append("Site name must contain at least 2 characters.")
+        errors.append(
+            "Site name must contain at least 2 characters."
+        )
 
     elif len(site_name.strip()) > 80:
-        errors.append("Site name cannot exceed 80 characters.")
+        errors.append(
+            "Site name cannot exceed 80 characters."
+        )
 
     return errors
 
@@ -156,6 +178,7 @@ def validate_latitude(latitude):
     try:
         value = float(latitude)
         valid = math.isfinite(value)
+
     except (TypeError, ValueError):
         valid = False
         value = 0
@@ -178,6 +201,7 @@ def validate_longitude(longitude):
     try:
         value = float(longitude)
         valid = math.isfinite(value)
+
     except (TypeError, ValueError):
         valid = False
         value = 0
@@ -197,15 +221,23 @@ def validate_landing_site(site_name, latitude, longitude):
 
     errors = []
 
-    errors.extend(validate_site_name(site_name))
-    errors.extend(validate_latitude(latitude))
-    errors.extend(validate_longitude(longitude))
+    errors.extend(
+        validate_site_name(site_name)
+    )
+
+    errors.extend(
+        validate_latitude(latitude)
+    )
+
+    errors.extend(
+        validate_longitude(longitude)
+    )
 
     return errors
 
 
 # =====================================================
-# 4. CREATE UTC DATETIME
+# 4. CREATE LANDING DATETIME (UTC)
 # =====================================================
 
 def create_landing_datetime(landing_date, landing_time):
@@ -220,23 +252,27 @@ def create_landing_datetime(landing_date, landing_time):
 # 5. CREATE LANDING SCENARIO
 # =====================================================
 
-def create_landing_scenario(site, landing_date, landing_time):
+def create_landing_scenario(
+    site,
+    landing_date,
+    landing_time
+):
 
     return LandingScenario(
         site_code=site["code"],
         site_name=site["name"],
         latitude=float(site["latitude"]),
         longitude=float(site["longitude"]),
+
         datetime_utc=create_landing_datetime(
             landing_date,
             landing_time
-     python -m streamlit run app.py
         )
     )
 
 
 # =====================================================
-# 6. MAIN LANDING SITE SELECTION FORM
+# 6. MAIN LANDING SITE SELECTION
 # =====================================================
 
 def render_landing_site_selection():
@@ -254,70 +290,94 @@ def render_landing_site_selection():
 
     st.divider()
 
+    # SESSION STATE
+
     if "landing_scenario" not in st.session_state:
         st.session_state["landing_scenario"] = None
 
+    # -------------------------------------------------
+    # 1. SOUTH POLE LANDING SITE
+    # -------------------------------------------------
+
+    st.subheader("1. South Pole Landing Site")
+
     site_labels = list(SOUTH_POLE_SITES.keys())
 
-    # -------------------------------
-    # INPUT FORM
-    # -------------------------------
+    selected_label = st.selectbox(
+        "Select Landing Site",
+        options=site_labels,
+        index=1,
+        key="selected_landing_site"
+    )
+
+    selected_site = SOUTH_POLE_SITES[selected_label]
+
+    site_code = selected_site["code"]
+
+    # -------------------------------------------------
+    # 2. SITE INFORMATION
+    # -------------------------------------------------
+
+    st.text_input(
+        "Site Code",
+        value=selected_site["code"],
+        disabled=True,
+        key=f"site_code_{site_code}"
+    )
+
+    st.text_input(
+        "Landing-Site Name",
+        value=selected_site["name"],
+        disabled=True,
+        key=f"site_name_{site_code}"
+    )
+
+    # -------------------------------------------------
+    # 3. LUNAR COORDINATES
+    # -------------------------------------------------
+
+    st.subheader("2. Lunar Coordinates")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.number_input(
+            "Latitude (°)",
+            value=float(selected_site["latitude"]),
+            format="%.5f",
+            disabled=True,
+            key=f"latitude_{site_code}"
+        )
+
+    with col2:
+
+        st.number_input(
+            "Longitude (°)",
+            value=float(selected_site["longitude"]),
+            format="%.5f",
+            disabled=True,
+            key=f"longitude_{site_code}"
+        )
+
+    st.caption(
+        "South and west coordinates are negative."
+    )
+
+    st.divider()
+
+    # -------------------------------------------------
+    # 4. LANDING SCHEDULE
+    # -------------------------------------------------
+
+    st.subheader("3. Landing Schedule")
 
     with st.form("luna_landing_site_form"):
-
-        st.subheader("1. South Pole Landing Site")
-
-        selected_label = st.selectbox(
-            "Select Landing Site",
-            site_labels,
-            index=1
-        )
-
-        selected_site = SOUTH_POLE_SITES[selected_label]
-
-        st.text_input(
-            "Site Code",
-            value=selected_site["code"],
-            disabled=True
-        )
-
-        st.text_input(
-            "Landing-Site Name",
-            value=selected_site["name"],
-            disabled=True
-        )
-
-        st.subheader("2. Lunar Coordinates")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.number_input(
-                "Latitude (°)",
-                value=float(selected_site["latitude"]),
-                format="%.5f",
-                disabled=True
-            )
-
-        with col2:
-            st.number_input(
-                "Longitude (°)",
-                value=float(selected_site["longitude"]),
-                format="%.5f",
-                disabled=True
-            )
-
-        st.caption(
-            "South and west coordinates are negative."
-        )
-
-        st.divider()
-
-        st.subheader("3. Landing Schedule")
 
         col3, col4 = st.columns(2)
 
         with col3:
+
             landing_date = st.date_input(
                 "Landing Date",
                 value=date.today(),
@@ -325,6 +385,7 @@ def render_landing_site_selection():
             )
 
         with col4:
+
             landing_time = st.time_input(
                 "Landing Time (UTC)",
                 value=time(0, 0),
@@ -336,9 +397,9 @@ def render_landing_site_selection():
             use_container_width=True
         )
 
-    # -------------------------------
-    # PROCESS SUBMISSION
-    # -------------------------------
+    # -------------------------------------------------
+    # 5. PROCESS SUBMISSION
+    # -------------------------------------------------
 
     if submitted:
 
@@ -352,7 +413,9 @@ def render_landing_site_selection():
 
             st.session_state["landing_scenario"] = None
 
-            st.error("Please correct the following errors:")
+            st.error(
+                "Please correct the following errors:"
+            )
 
             for error in errors:
                 st.warning(error)
@@ -367,9 +430,9 @@ def render_landing_site_selection():
 
         st.session_state["landing_scenario"] = scenario
 
-    # -------------------------------
-    # DISPLAY RESULT
-    # -------------------------------
+    # -------------------------------------------------
+    # 6. DISPLAY RESULT
+    # -------------------------------------------------
 
     scenario = st.session_state["landing_scenario"]
 
@@ -411,6 +474,10 @@ def render_landing_site_selection():
         )
     )
 
+    # -------------------------------------------------
+    # 7. ADDITIONAL INFORMATION
+    # -------------------------------------------------
+
     with st.expander("Data Source and Information"):
 
         st.write(
@@ -429,4 +496,3 @@ def render_landing_site_selection():
 # =====================================================
 # END OF LANDING SITE SELECTION MODULE
 # =====================================================
-

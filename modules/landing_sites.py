@@ -17,112 +17,96 @@ SOUTH_POLE_SITES = {
         "latitude": -89.4632,
         "longitude": -137.49
     },
-
     "Site04 — Shackleton Rim": {
         "code": "Site04",
         "name": "Shackleton Rim",
         "latitude": -89.7668,
         "longitude": -171.87
     },
-
     "Site06 — Nobile Rim 1": {
         "code": "Site06",
         "name": "Nobile Rim 1",
         "latitude": -85.4381,
         "longitude": 37.36667
     },
-
     "Site07 — Peak Near Shackleton": {
         "code": "Site07",
         "name": "Peak Near Shackleton",
         "latitude": -88.8110,
         "longitude": 123.6901
     },
-
     "Site11 — de Gerlache Rim 1": {
         "code": "Site11",
         "name": "de Gerlache Rim 1",
         "latitude": -88.6834,
         "longitude": -67.9321
     },
-
     "Site20 — Leibnitz Beta Plateau": {
         "code": "Site20",
         "name": "Leibnitz Beta Plateau",
         "latitude": -85.4266,
         "longitude": 31.74276
     },
-
     "Site20v2 — Leibnitz Beta Plateau Extended": {
         "code": "Site20v2",
         "name": "Leibnitz Beta Plateau Extended",
         "latitude": -85.4266,
         "longitude": 31.74276
     },
-
     "Site23 — Malapert Massif": {
         "code": "Site23",
         "name": "Malapert Massif",
         "latitude": -85.9948,
         "longitude": -0.23578
     },
-
     "Site42 — de Gerlache-Kocher Massif": {
         "code": "Site42",
         "name": "de Gerlache-Kocher Massif",
         "latitude": -85.8296,
         "longitude": -116.322
     },
-
     "NPA — Cabeus Exterior Wall 1": {
         "code": "NPA",
         "name": "Cabeus Exterior Wall 1",
         "latitude": -86.9243,
         "longitude": -71.5651
     },
-
     "NPB — Amundsen 1": {
         "code": "NPB",
         "name": "Amundsen 1",
         "latitude": -83.9046,
         "longitude": 89.53545
     },
-
     "NPC — Idelson L Crater 1": {
         "code": "NPC",
         "name": "Idelson L Crater 1",
         "latitude": -84.5397,
         "longitude": 126.9045
     },
-
     "NPD — Malapert Crater 1": {
         "code": "NPD",
         "name": "Malapert Crater 1",
         "latitude": -84.8034,
         "longitude": 8.387032
     },
-
     "Shoemaker": {
         "code": "Shoemaker",
         "name": "Shoemaker",
         "latitude": -87.1835,
         "longitude": 62.83502
     },
-
     "SL2 — de Gerlache Rim 2": {
         "code": "SL2",
         "name": "de Gerlache Rim 2",
         "latitude": -88.2300,
         "longitude": -64.6284
     },
-
     "SL3 — Connecting Ridge Extension": {
         "code": "SL3",
         "name": "Connecting Ridge Extension",
         "latitude": -89.0324,
         "longitude": -101.999
     },
-
     "LM8 — Shoemaker Rim F": {
         "code": "LM8",
         "name": "Shoemaker Rim F",
@@ -154,19 +138,13 @@ def validate_site_name(site_name):
     errors = []
 
     if not site_name or not site_name.strip():
-        errors.append(
-            "Landing-site name cannot be empty."
-        )
+        errors.append("Landing-site name cannot be empty.")
 
     elif len(site_name.strip()) < 2:
-        errors.append(
-            "Site name must contain at least 2 characters."
-        )
+        errors.append("Site name must contain at least 2 characters.")
 
     elif len(site_name.strip()) > 80:
-        errors.append(
-            "Site name cannot exceed 80 characters."
-        )
+        errors.append("Site name cannot exceed 80 characters.")
 
     return errors
 
@@ -221,17 +199,9 @@ def validate_landing_site(site_name, latitude, longitude):
 
     errors = []
 
-    errors.extend(
-        validate_site_name(site_name)
-    )
-
-    errors.extend(
-        validate_latitude(latitude)
-    )
-
-    errors.extend(
-        validate_longitude(longitude)
-    )
+    errors.extend(validate_site_name(site_name))
+    errors.extend(validate_latitude(latitude))
+    errors.extend(validate_longitude(longitude))
 
     return errors
 
@@ -252,18 +222,13 @@ def create_landing_datetime(landing_date, landing_time):
 # 5. CREATE LANDING SCENARIO
 # =====================================================
 
-def create_landing_scenario(
-    site,
-    landing_date,
-    landing_time
-):
+def create_landing_scenario(site, landing_date, landing_time):
 
     return LandingScenario(
         site_code=site["code"],
         site_name=site["name"],
         latitude=float(site["latitude"]),
         longitude=float(site["longitude"]),
-
         datetime_utc=create_landing_datetime(
             landing_date,
             landing_time
@@ -279,10 +244,41 @@ def render_landing_site_selection():
 
     st.title("🌙 Landing Site Selection")
 
-    st.write(
-        "Select a lunar south-pole landing-site feature "
-        "and enter the planned landing schedule."
-    )
+    # -------------------------------------------------
+    # WHY CHOOSE THE LUNAR SOUTH POLE?
+    # -------------------------------------------------
+
+    st.markdown("### 🌑 Why Choose the Lunar South Pole?")
+
+    reasons = [
+        (
+            "💧 Water Ice",
+            "Potential source of water for future missions."
+        ),
+        (
+            "☀️ Solar Energy",
+            "Extended sunlight in selected areas."
+        ),
+        (
+            "🔬 Scientific Research",
+            "Valuable opportunities to study the Moon."
+        ),
+        (
+            "🚀 Future Exploration",
+            "Supports long-term lunar missions."
+        )
+    ]
+
+    reason_columns = st.columns(4)
+
+    for column, (title, description) in zip(reason_columns, reasons):
+
+        with column:
+
+            with st.container(border=True):
+
+                st.markdown(f"**{title}**")
+                st.caption(description)
 
     st.caption(
         "LUNA-NAVI | Lunar Landing Site Navigator"
@@ -290,7 +286,9 @@ def render_landing_site_selection():
 
     st.divider()
 
+    # -------------------------------------------------
     # SESSION STATE
+    # -------------------------------------------------
 
     if "landing_scenario" not in st.session_state:
         st.session_state["landing_scenario"] = None

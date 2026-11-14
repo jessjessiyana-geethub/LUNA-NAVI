@@ -18,24 +18,31 @@ st.caption(
 
 scenario = render_landing_site_selection()
 
-st.divider()
-st.header("Selected Landing Site")
 
-col1, col2, col3 = st.columns(3)
+if scenario is not None:
 
-with col1:
-    st.metric("Site", scenario.site_name)
+    st.divider()
+    st.header("Selected Landing Site")
 
-with col2:
-    st.metric("Latitude", f"{scenario.latitude:.2f}°")
+    col1, col2, col3 = st.columns(3)
 
-with col3:
-    st.metric("Longitude", f"{scenario.longitude:.2f}°")
+    with col1:
+        st.metric("Site", scenario.site_name)
 
-st.write(
-    "Selected landing time (UTC):",
-    scenario.datetime_utc.strftime("%Y-%m-%d %H:%M")
-)
+    with col2:
+        st.metric("Latitude", f"{scenario.latitude:.2f}°")
+
+    with col3:
+        st.metric("Longitude", f"{scenario.longitude:.2f}°")
+
+    st.write(
+        "Selected landing time (UTC):",
+        scenario.datetime_utc.strftime("%Y-%m-%d %H:%M")
+    )
+
+else:
+    st.info("Please select a landing site and submit the form.")
+
 
 solar_tab, earth_tab, comparison_tab, visual_tab = st.tabs([
     "☀️ Solar Analysis",
@@ -66,3 +73,4 @@ st.warning(
     "Development version: Scientific calculations are not "
     "yet connected to validated NASA data."
 )
+

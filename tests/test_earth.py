@@ -277,7 +277,7 @@ def test_terrain_without_matching_azimuth():
         target_azimuth=90
     )
 
-    assert horizon == 0.0
+    assert horizon is None
 
 
 def test_timeline_with_terrain_obstruction():

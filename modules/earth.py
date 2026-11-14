@@ -216,7 +216,7 @@ def calculate_terrain_horizon(
     This is a preliminary terrain model.
     """
 
-    best_angle = 0.0
+    best_angle = None
 
     for _, row in terrain_data.iterrows():
 
@@ -253,7 +253,8 @@ def calculate_terrain_horizon(
             )
         )
 
-        best_angle = max(best_angle, apparent_angle)
+        if best_angle is None or apparent_angle > best_angle:
+            best_angle = apparent_angle
 
     return best_angle
 
@@ -264,20 +265,27 @@ def calculate_terrain_horizon(
 
 def classify_visibility(
     earth_elevation,
-    terrain_horizon=0.0
+    terrain_horizon=None
 ):
     """
-    Classify the visibility of Earth's centre.
+    Classify Earth's centre visibility.
 
-    This is a centre-line-of-sight test.
-    It does not classify partial Earth-disc visibility.
+    Returns:
+        UNKNOWN: Required data is missing.
+        VISIBLE: Earth is above the terrain horizon.
+        OBSTRUCTED: Earth is at or below the terrain horizon.
     """
+
+    if pd.isna(earth_elevation):
+        return "UNKNOWN"
+
+    if terrain_horizon is None or pd.isna(terrain_horizon):
+        return "UNKNOWN"
 
     if earth_elevation > terrain_horizon:
         return "VISIBLE"
 
     return "OBSTRUCTED"
-
 
 # ==================================================
 # 7. PROCESS VISIBILITY TIMELINE
@@ -288,33 +296,54 @@ def process_visibility_timeline(
     terrain_data=None,
     observer_elevation_m=0.0
 ):
+    """
+    Process Earth visibility over time.
+
+    Missing or invalid data is classified as UNKNOWN.
+    """
 
     results = []
 
     for _, row in ephemeris.iterrows():
 
-        elevation = float(
-            row["Earth Elevation (deg)"]
+        elevation = pd.to_numeric(
+            row["Earth Elevation (deg)"],
+            errors="coerce"
         )
 
-        azimuth = float(
-            row["Earth Azimuth (deg)"]
+        azimuth = pd.to_numeric(
+            row["Earth Azimuth (deg)"],
+            errors="coerce"
         )
 
-        horizon = 0.0
+        horizon = None
 
-        if terrain_data is not None:
+        if not pd.notna(elevation) or not pd.notna(azimuth):
+                status = "UNKNOWN"
 
-            horizon = calculate_terrain_horizon(
-                terrain_data,
-                azimuth,
-                observer_elevation_m
-            )
+        elif terrain_data is not None:
+                horizon = calculate_terrain_horizon(
+                    terrain_data,
+                    azimuth,
+                    observer_elevation_m
+                )
 
-        status = classify_visibility(
-            elevation,
-            horizon
-        )
+                if horizon is None:
+                    status = "UNKNOWN"
+                else:
+                    status = classify_visibility(
+                        elevation,
+                        horizon
+                    )
+
+        else:
+                horizon = 0.0
+                status = classify_visibility(
+                    elevation,
+                    horizon
+                )
+
+
 
         results.append({
             "Time": row["Time"],

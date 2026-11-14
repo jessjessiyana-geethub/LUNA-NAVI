@@ -3,6 +3,8 @@ import streamlit as st
 from modules.solar import render_solar_analysis
 from modules.landing_sites import render_landing_site_selection
 from modules.comparison import run_mission_comparison
+from modules.earth import render_earth_visibility
+from modules.terrain_loader import get_terrain_file
 
 st.set_page_config(
     page_title="LUNA-NAVI",
@@ -63,8 +65,30 @@ with solar_tab:
         )
 
 with earth_tab:
-    st.header("Earth Visibility Analysis")
-    st.info("Irven's communication analysis will appear here.")
+    if scenario is not None:
+
+        st.write("Selected Site:", scenario.site_name)
+        st.write("Site Code:", scenario.site_code)
+
+        terrain_file = get_terrain_file(scenario)
+
+        if terrain_file is not None:
+            st.success(
+                f"Terrain file found: {terrain_file.name}"
+            )
+        else:
+            st.warning(
+                "No processed NASA terrain profile "
+                "is available for this site yet."
+            )
+
+        render_earth_visibility(scenario)
+
+    else:
+        st.info(
+            "Please select and submit a landing site "
+            "before starting Earth Visibility Analysis."
+        )
 
 with comparison_tab:
     if scenario is not None:

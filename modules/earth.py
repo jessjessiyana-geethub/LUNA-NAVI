@@ -16,7 +16,7 @@ Features:
 NASA Horizons API:
 https://ssd-api.jpl.nasa.gov/api/horizons.api
 """
-
+from modules.terrain_loader import get_terrain_file
 import math
 import csv
 import io
@@ -529,8 +529,20 @@ def render_earth_visibility(scenario):
 
     # Terrain upload
 
-    st.subheader("Lunar Terrain Data")
+   
+    
+    # Automatically load terrain for Awang's selected site
+    terrain_file = get_terrain_file(scenario)
 
+    terrain_data = None
+
+    required = {
+        "azimuth_deg",
+        "distance_km",
+        "elevation_m"
+    }
+
+    # Allow manual CSV upload
     uploaded_file = st.file_uploader(
         "Upload terrain profile CSV (optional)",
         type=["csv"],
@@ -540,19 +552,15 @@ def render_earth_visibility(scenario):
         )
     )
 
-    terrain_data = None
+    # Use uploaded CSV first, otherwise automatic file
+    source = uploaded_file
 
-    if uploaded_file is not None:
+    if source is None and terrain_file is not None:
+        source = terrain_file
 
+    if source is not None:
         try:
-
-            terrain_data = pd.read_csv(uploaded_file)
-
-            required = {
-                "azimuth_deg",
-                "distance_km",
-                "elevation_m"
-            }
+            terrain_data = pd.read_csv(source)
 
             if not required.issubset(terrain_data.columns):
                 raise ValueError(
@@ -560,12 +568,50 @@ def render_earth_visibility(scenario):
                     "distance_km and elevation_m."
                 )
 
-            st.success("Terrain CSV loaded successfully.")
+            for column in required:
+                terrain_data[column] = pd.to_numeric(
+                    terrain_data[column],
+                    errors="raise"
+                )
+
+            if terrain_data.empty:
+                raise ValueError("Terrain CSV is empty.")
+
+            if terrain_data[list(required)].isna().any().any():
+                raise ValueError(
+                    "Terrain CSV contains missing measurements."
+                )
+
+            if not terrain_data["azimuth_deg"].between(
+                0, 360
+            ).all():
+                raise ValueError(
+                    "Azimuth must be between 0 and 360 degrees."
+                )
+
+            if not (terrain_data["distance_km"] > 0).all():
+                raise ValueError(
+                    "Terrain distances must be greater than zero."
+                )
+
+            if uploaded_file is not None:
+                st.success("Manual terrain CSV loaded.")
+            else:
+                st.success(
+                    f"Automatic terrain loaded: "
+                    f"{terrain_file.name}"
+                )
 
         except Exception as error:
-
             st.error(f"Terrain data error: {error}")
             terrain_data = None
+
+    else:
+        st.warning(
+            "No terrain profile available for this site. "
+            "Terrain-aware Earth visibility requires "
+            "a valid terrain CSV."
+        )
 
     # Run analysis
 

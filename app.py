@@ -1,44 +1,68 @@
 
 import streamlit as st
+from modules.landing_sites import render_landing_site_selection
 
 st.set_page_config(
-    page_title="LUNA NAV",
+    page_title="LUNA-NAVI",
     page_icon="🌙",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-# Application header
-st.title("🌙 LUNA NAV")
+st.title("🌙 LUNA-NAVI")
 st.subheader("Lunar Landing Site Navigator")
 
-st.markdown("""
-Welcome to LUNA NAV.
+st.caption(
+    "NASA Space Apps Challenge | "
+    "Lunar landing site planning application"
+)
 
-An interactive mission-planning application
-for lunar south pole landing site assessment.
-""")
+scenario = render_landing_site_selection()
 
 st.divider()
-
-st.header("Mission Overview")
+st.header("Selected Landing Site")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric("Analysis Modules", "5")
+    st.metric("Site", scenario.site_name)
 
 with col2:
-    st.metric("Candidate Sites", "3")
+    st.metric("Latitude", f"{scenario.latitude:.2f}°")
 
 with col3:
-    st.metric("Mission Status", "Ready")
+    st.metric("Longitude", f"{scenario.longitude:.2f}°")
 
-st.info(
-    "Select an analysis section from the sidebar "
-    "to begin exploring the mission."
+st.write(
+    "Selected landing time (UTC):",
+    scenario.datetime_utc.strftime("%Y-%m-%d %H:%M")
 )
 
-st.caption(
-    "LUNA NAV | NASA Space Apps Challenge 2026"
+solar_tab, earth_tab, comparison_tab, visual_tab = st.tabs([
+    "☀️ Solar Analysis",
+    "🌍 Earth Visibility",
+    "📊 Mission Comparison",
+    "🌕 3D Lunar Visualization"
+])
+
+with solar_tab:
+    st.header("Solar Position Analysis")
+    st.info("Ethan's solar calculation module will appear here.")
+
+with earth_tab:
+    st.header("Earth Visibility Analysis")
+    st.info("Irven's communication analysis will appear here.")
+
+with comparison_tab:
+    st.header("Mission Comparison")
+    st.info("Chiew's landing site comparison will appear here.")
+
+with visual_tab:
+    st.header("3D Lunar Visualization")
+    st.info("Davin's lunar visualization will appear here.")
+
+st.divider()
+
+st.warning(
+    "Development version: Scientific calculations are not "
+    "yet connected to validated NASA data."
 )

@@ -1,5 +1,6 @@
 
 import streamlit as st
+from modules.solar import render_solar_analysis
 from modules.landing_sites import render_landing_site_selection
 
 st.set_page_config(
@@ -45,8 +46,7 @@ solar_tab, earth_tab, comparison_tab, visual_tab = st.tabs([
 ])
 
 with solar_tab:
-    st.header("Solar Position Analysis")
-    st.info("Ethan's solar calculation module will appear here.")
+     render_solar_analysis(scenario)
 
 with earth_tab:
     st.header("Earth Visibility Analysis")

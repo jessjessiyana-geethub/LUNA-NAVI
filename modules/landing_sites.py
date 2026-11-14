@@ -230,7 +230,6 @@ def create_landing_scenario(site, landing_date, landing_time):
         datetime_utc=create_landing_datetime(
             landing_date,
             landing_time
-     python -m streamlit run app.py
         )
     )
 

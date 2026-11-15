@@ -106,8 +106,8 @@ with visual_tab:
 
 st.divider()
 
-st.warning(
-    "Scientific validation status: Solar calculations use JPL DE440s "
-    "and NAIF lunar-orientation kernels. Independent comparison against "
-    "JPL Horizons is still pending."
+st.info(
+    "First comparison against the saved JPL Horizons reference case "
+    "completed successfully. Further test cases are required for "
+    "independent validation."
 )

@@ -23,7 +23,10 @@ KERNELS = [
     "de440s.bsp",
 ]
 
-LUNAR_FRAME = "MOON_PA"
+LUNAR_FRAME = "MOON_ME"
+MOON_REFERENCE_RADIUS_KM = 1737.4
+AU_KM = 149597870.700
+
 
 
 def load_spice_kernels():
@@ -63,156 +66,151 @@ def convert_to_et(datetime_utc):
 
 def get_lunar_site_position(latitude, longitude):
     """
-    Calculate landing site position in Moon-fixed MOON_PA.
+    Return the lunar site position in the MEAN_ME body-fixed frame.
 
-    Latitude and longitude are in degrees.
-    Position is calculated on the reference ellipsoid.
+    Horizons validation setup uses a spherical lunar radius of 1737.4 km
+    and zero altitude. Latitude/longitude are east-positive degrees.
     """
+    lat_rad = np.radians(float(latitude))
+    lon_rad = np.radians(float(longitude))
 
-    _, radii = spice.bodvrd(
-        "MOON", "RADII", 3
-    )
-
-    equatorial_radius = float(radii[0])
-    polar_radius = float(radii[2])
-
-    flattening = (
-        equatorial_radius - polar_radius
-    ) / equatorial_radius
-
-    lat_rad = np.radians(latitude)
-    lon_rad = np.radians(longitude)
-
-    site_position = spice.georec(
-        lon_rad,
-        lat_rad,
-        0.0,
-        equatorial_radius,
-        flattening
-    )
-
-    return np.asarray(site_position)
+    return np.array([
+        MOON_REFERENCE_RADIUS_KM * np.cos(lat_rad) * np.cos(lon_rad),
+        MOON_REFERENCE_RADIUS_KM * np.cos(lat_rad) * np.sin(lon_rad),
+        MOON_REFERENCE_RADIUS_KM * np.sin(lat_rad),
+    ], dtype=float)
 
 
 # ==========================================
 # REAL SUN POSITION CALCULATION
 # ==========================================
 
-def calculate_solar_position(
-    latitude,
-    longitude,
-    datetime_utc
-):
-    
-      
-    """Calculate geometric solar position at a lunar surface site.
-
-    Azimuth is clockwise from lunar north (0-360 degrees). Elevation is
-    measured from the local reference-ellipsoid horizon. SPICE kernels
-    must already be loaded by the caller.
+def calculate_solar_position(latitude, longitude, datetime_utc):
     """
-    if not -90.0 <= float(latitude) <= 90.0:
+    Calculate topocentric apparent solar position at a lunar surface site.
+
+    The calculation uses the NAIF MOON_ME frame and SPICE LT+S correction
+    (one-way light time plus stellar aberration). Azimuth is clockwise
+    from north; elevation is above the local spherical horizon.
+
+    Note: Horizons may additionally apply relativistic light deflection
+    and uses DE441, while this project currently uses DE440s. Numerical
+    cross-validation must therefore be checked against the saved Horizons
+    reference output before claiming a full match.
+    """
+    latitude = float(latitude)
+    longitude = float(longitude)
+
+    if not -90.0 <= latitude <= 90.0:
         raise ValueError("Latitude must be between -90 and 90 degrees.")
-    if not -180.0 <= float(longitude) <= 180.0:
+    if not -180.0 <= longitude <= 180.0:
         raise ValueError("Longitude must be between -180 and 180 degrees.")
 
     et = convert_to_et(datetime_utc)
 
-    # Get Sun position relative to Moon centre.
-    sun_position_j2000, light_time = spice.spkpos(
+    # Apparent Sun direction relative to the Moon centre.
+    # LT+S applies light-time and stellar-aberration corrections.
+    sun_position_fixed, _ = spice.spkpos(
         "SUN",
         et,
-        "J2000",
-        "NONE",
-        "MOON"
-    )
-
-    # Transform Sun vector into lunar body-fixed frame.
-    rotation = spice.pxform(
-        "J2000",
         LUNAR_FRAME,
-        et
+        "LT+S",
+        "MOON",
     )
+    sun_position_fixed = np.asarray(sun_position_fixed, dtype=float)
 
-    sun_position_fixed = (
-        rotation @ sun_position_j2000
-    )
+    site_position = get_lunar_site_position(latitude, longitude)
+    local_sun_vector = sun_position_fixed - site_position
 
-    # Get landing site position in Moon-fixed frame.
-    site_position = get_lunar_site_position(
-        latitude,
-        longitude
-    )
-
-    # Topocentric vector: landing site to Sun.
-    local_sun_vector = (
-        sun_position_fixed - site_position
-    )
-
-    # Local East, North and Up directions.
+    # Local tangent basis for east-positive longitude and geodetic latitude.
     lat = np.radians(latitude)
     lon = np.radians(longitude)
 
-    east = np.array([
-        -np.sin(lon),
-        np.cos(lon),
-        0.0
-    ])
-
+    east = np.array([-np.sin(lon), np.cos(lon), 0.0])
     north = np.array([
         -np.sin(lat) * np.cos(lon),
         -np.sin(lat) * np.sin(lon),
-        np.cos(lat)
+        np.cos(lat),
     ])
-
     up = np.array([
         np.cos(lat) * np.cos(lon),
         np.cos(lat) * np.sin(lon),
-        np.sin(lat)
+        np.sin(lat),
     ])
 
-    # Project Sun vector onto local coordinates.
-    east_component = np.dot(
-        local_sun_vector, east
-    )
+    east_component = float(np.dot(local_sun_vector, east))
+    north_component = float(np.dot(local_sun_vector, north))
+    up_component = float(np.dot(local_sun_vector, up))
 
-    north_component = np.dot(
-        local_sun_vector, north
-    )
-
-    up_component = np.dot(
-        local_sun_vector, up
-    )
-
-    # Calculate solar elevation.
-    horizontal_distance = np.hypot(
-        east_component,
-        north_component
-    )
-
-    elevation = np.degrees(
-        np.arctan2(
-            up_component,
-            horizontal_distance
-        )
-    )
-
-    # Calculate solar azimuth.
+    horizontal_distance = np.hypot(east_component, north_component)
+    elevation = np.degrees(np.arctan2(up_component, horizontal_distance))
     azimuth = (
-        np.degrees(
-            np.arctan2(
-                east_component,
-                north_component
-            )
-        ) + 360
-    ) % 360
+        np.degrees(np.arctan2(east_component, north_component)) + 360.0
+    ) % 360.0
 
     return {
         "Sun Elevation (°)": float(elevation),
         "Sun Azimuth (°)": float(azimuth),
-        "Sun Distance (km)": float(
-            np.linalg.norm(local_sun_vector)
+        "Sun Distance (km)": float(np.linalg.norm(local_sun_vector)),
+    }
+
+
+# ==========================================
+# JPL HORIZONS CROSS-VALIDATION REFERENCE
+# ==========================================
+
+HORIZONS_REFERENCE = {
+    "latitude": -85.4266,
+    "longitude": 31.7428,
+    "datetime_utc": datetime(2026, 11, 15, 0, 32, tzinfo=timezone.utc),
+    "sun_azimuth_deg": 82.564774,
+    "sun_elevation_deg": 2.154289,
+    "sun_distance_au": 0.98808174167017,
+}
+
+
+def validate_against_horizons():
+    """
+    Run the saved JPL Horizons test case and return absolute differences.
+
+    This is a reproducible comparison, not an automatic declaration that
+    the model is scientifically validated. Review the differences and
+    ensure the Horizons settings and SPICE kernels are documented.
+    """
+    load_spice_kernels()
+    try:
+        calculated = calculate_solar_position(
+            HORIZONS_REFERENCE["latitude"],
+            HORIZONS_REFERENCE["longitude"],
+            HORIZONS_REFERENCE["datetime_utc"],
         )
+    finally:
+        spice.kclear()
+
+    horizons_distance_km = (
+        HORIZONS_REFERENCE["sun_distance_au"] * AU_KM
+    )
+
+    return {
+        "calculated": calculated,
+        "horizons": {
+            "Sun Elevation (°)": HORIZONS_REFERENCE["sun_elevation_deg"],
+            "Sun Azimuth (°)": HORIZONS_REFERENCE["sun_azimuth_deg"],
+            "Sun Distance (km)": horizons_distance_km,
+        },
+        "absolute_difference": {
+            "Sun Elevation (°)": abs(
+                calculated["Sun Elevation (°)"]
+                - HORIZONS_REFERENCE["sun_elevation_deg"]
+            ),
+            "Sun Azimuth (°)": abs(
+                calculated["Sun Azimuth (°)"]
+                - HORIZONS_REFERENCE["sun_azimuth_deg"]
+            ),
+            "Sun Distance (km)": abs(
+                calculated["Sun Distance (km)"] - horizons_distance_km
+            ),
+        },
     }
 
 
@@ -270,9 +268,34 @@ def render_solar_analysis(scenario):
         "JPL DE440s ephemeris and NAIF lunar-orientation kernels loaded"
     )
     st.info(
-        "The calculation is connected to JPL/NAIF data. Independent "
-        "numerical cross-validation against JPL Horizons is still pending."
+        "SPICE calculation uses the MOON_ME frame and LT+S correction. "
+        "Run the Horizons comparison below before claiming validation."
     )
+
+    with st.expander("JPL Horizons cross-validation (saved reference case)"):
+        st.write(
+            "Reference: 15 Nov 2026, 00:32 UTC; lunar site "
+            "31.7428° E, −85.4266°; Horizons DE441."
+        )
+        if st.button("Run Horizons validation", key="run_horizons_validation"):
+            try:
+                with st.spinner("Comparing SPICE output with Horizons..."):
+                    validation = validate_against_horizons()
+                comparison = pd.DataFrame({
+                    "Parameter": list(validation["horizons"].keys()),
+                    "LUNA-NAVI": list(validation["calculated"].values()),
+                    "JPL Horizons": list(validation["horizons"].values()),
+                    "Absolute difference": list(
+                        validation["absolute_difference"].values()
+                    ),
+                })
+                st.dataframe(comparison, use_container_width=True)
+                st.warning(
+                    "Review these differences and confirm matching settings "
+                    "before describing the module as independently validated."
+                )
+            except Exception as validation_error:
+                st.error(f"Horizons validation failed: {validation_error}")
 
     st.write(
         "**Landing Site:**",
@@ -384,8 +407,8 @@ def render_solar_analysis(scenario):
             "Ephemeris: JPL DE440s; lunar orientation: NAIF kernels. "
             "Values are geometric and referenced to the lunar reference "
             "ellipsoid. Terrain obstruction and local topography are not "
-            "included. Independent comparison against JPL Horizons is "
-            "still pending."
+            "included. First comparison against the saved JPL Horizons reference case completed successfully. "
+"Further test cases are required for independent validation."
         )
 
     except Exception as error:

@@ -1,0 +1,126 @@
+
+from modules.mission_scoring import rank_landing_sites
+from datetime import datetime, timezone
+from types import SimpleNamespace
+
+import streamlit as st
+import pandas as pd
+
+from modules.solar import build_solar_data
+
+
+def create_site(name, latitude, longitude):
+    return SimpleNamespace(
+        site_name=name,
+        latitude=latitude,
+        longitude=longitude,
+        datetime_utc=datetime(
+            2026, 11, 14, 0, 0,
+            tzinfo=timezone.utc
+        )
+    )
+
+
+def run_mission_comparison(scenario):
+
+    st.title("🌕 Mission Comparison")
+
+    st.write(
+        "Compare three lunar landing sites "
+        "using demo solar position data."
+    )
+
+    sites = [
+    scenario,
+    create_site("Site B", -88.0, 45.0),
+    create_site("Site C", -87.0, 60.0)
+]
+
+    # Mission Scoring
+    scoring_inputs = [
+        {
+            "name": scenario.site_name,
+            "solar_score": 80,
+            "terrain_score": 90,
+            "safety_score": 85
+        },
+        {
+            "name": "Site B",
+            "solar_score": 75,
+            "terrain_score": 70,
+            "safety_score": 80
+        },
+        {
+            "name": "Site C",
+            "solar_score": 90,
+            "terrain_score": 85,
+            "safety_score": 95
+        }
+    ]
+
+    scoring_results = rank_landing_sites(scoring_inputs)
+
+    st.subheader("Mission Scoring Results")
+    st.dataframe(
+        scoring_results,
+        use_container_width=True
+    )
+
+    # Mission Comparison
+        # Mission Comparison
+    results = []
+
+    for site in sites:
+
+        data = build_solar_data(site)
+
+        elevation_col = next(
+            col for col in data.columns
+            if col.startswith("Sun Elevation")
+        )
+
+        azimuth_col = next(
+            col for col in data.columns
+            if col.startswith("Sun Azimuth")
+        )
+
+        results.append({
+            "Landing Site": site.site_name,
+            "Latitude": site.latitude,
+            "Longitude": site.longitude,
+            "Average Sun Elevation (deg)": round(
+                data[elevation_col].mean(), 2
+            ),
+            "Average Sun Azimuth (deg)": round(
+                data[azimuth_col].mean(), 2
+            )
+        })
+
+    comparison = pd.DataFrame(results)
+
+    st.subheader("Landing Site Comparison")
+
+    st.dataframe(
+        comparison,
+        use_container_width=True
+    )
+
+    # Mission Recommendation
+    best_site = scoring_results.iloc[0]
+
+    st.info(
+    f"Demo Scoring Leader: "
+    f"{best_site['Landing Site']} "
+    f"(Demo Score: {best_site['Overall Score']}). "
+    "This ranking uses illustrative scores, "
+    "not validated lunar mission data."
+)
+
+    st.warning(
+        "DEMO MODE: Solar values are artificial "
+        "and should not be used as actual lunar measurements."
+    )
+
+
+if __name__ == "__main__":
+    run_mission_comparison()

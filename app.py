@@ -5,6 +5,7 @@ from modules.landing_sites import render_landing_site_selection
 from modules.comparison import run_mission_comparison
 from modules.earth import render_earth_visibility
 from modules.terrain_loader import get_terrain_file
+from modules.visualization_3d import render_3d_lunar_visualization
 
 st.set_page_config(
     page_title="LUNA-NAVI",
@@ -100,8 +101,8 @@ with comparison_tab:
         )
 
 with visual_tab:
-    st.header("3D Lunar Visualization")
-    st.info("Davin's lunar visualization will appear here.")
+
+    render_3d_lunar_visualization(scenario)
 
 st.divider()
 
@@ -110,4 +111,3 @@ st.warning(
     "and NAIF lunar-orientation kernels. Independent comparison against "
     "JPL Horizons is still pending."
 )
-

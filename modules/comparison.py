@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import streamlit as st
 import pandas as pd
 
-from modules.solar import build_demo_solar_data
+from modules.solar import build_solar_data
 
 
 def create_site(name, latitude, longitude):
@@ -67,21 +67,32 @@ def run_mission_comparison(scenario):
     )
 
     # Mission Comparison
+        # Mission Comparison
     results = []
 
     for site in sites:
 
-        data = build_demo_solar_data(site)
+        data = build_solar_data(site)
+
+        elevation_col = next(
+            col for col in data.columns
+            if col.startswith("Sun Elevation")
+        )
+
+        azimuth_col = next(
+            col for col in data.columns
+            if col.startswith("Sun Azimuth")
+        )
 
         results.append({
             "Landing Site": site.site_name,
             "Latitude": site.latitude,
             "Longitude": site.longitude,
-            "Average Sun Elevation (°)": round(
-                data["Sun Elevation (°)"].mean(), 2
+            "Average Sun Elevation (deg)": round(
+                data[elevation_col].mean(), 2
             ),
-            "Average Sun Azimuth (°)": round(
-                data["Sun Azimuth (°)"].mean(), 2
+            "Average Sun Azimuth (deg)": round(
+                data[azimuth_col].mean(), 2
             )
         })
 

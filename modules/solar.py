@@ -407,8 +407,8 @@ def render_solar_analysis(scenario):
             "Ephemeris: JPL DE440s; lunar orientation: NAIF kernels. "
             "Values are geometric and referenced to the lunar reference "
             "ellipsoid. Terrain obstruction and local topography are not "
-            "included. Independent comparison against JPL Horizons is "
-            "still pending."
+            "included. First comparison against the saved JPL Horizons reference case completed successfully. "
+"Further test cases are required for independent validation."
         )
 
     except Exception as error:

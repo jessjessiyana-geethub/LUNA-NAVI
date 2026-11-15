@@ -106,7 +106,8 @@ with visual_tab:
 st.divider()
 
 st.warning(
-    "Development version: Scientific calculations are not "
-    "yet connected to validated NASA data."
+    "Scientific validation status: Solar calculations use JPL DE440s "
+    "and NAIF lunar-orientation kernels. Independent comparison against "
+    "JPL Horizons is still pending."
 )
 

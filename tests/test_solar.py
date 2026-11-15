@@ -1,75 +1,42 @@
 
-from datetime import datetime, timezone, timedelta
-from types import SimpleNamespace
+from datetime import datetime, timezone
 
-from modules.solar import build_demo_solar_data
+from modules.solar import (
+    calculate_solar_position,
+    load_spice_kernels
+)
 
 
-def create_test_scenario():
-    """Create sample landing site data for testing."""
+def test_solar_position_calculation():
 
-    return SimpleNamespace(
-        site_name="Lunar South Pole",
-        latitude=-89.5,
-        longitude=30.0,
-        datetime_utc=datetime(
-            2026, 11, 14, 0, 0,
-            tzinfo=timezone.utc
-        )
+    # Load NASA/JPL SPICE kernels
+    load_spice_kernels()
+
+    # Test landing site
+    latitude = -89.5
+    longitude = 30.0
+
+    # Test date and time
+    datetime_utc = datetime(
+        2026, 11, 14, 0, 0,
+        tzinfo=timezone.utc
     )
 
-
-def test_solar_data_generation():
-    """Check whether solar data is generated."""
-
-    scenario = create_test_scenario()
-    data = build_demo_solar_data(scenario)
-
-    assert data is not None
-    assert len(data) == 25
-
-
-def test_solar_data_columns():
-    """Check required data columns."""
-
-    scenario = create_test_scenario()
-    data = build_demo_solar_data(scenario)
-
-    assert "Time (UTC)" in data.columns
-    assert "Sun Elevation (°)" in data.columns
-    assert "Sun Azimuth (°)" in data.columns
-
-def test_solar_elevation_range():
-    """Check solar elevation values."""
-
-    scenario = create_test_scenario()
-    data = build_demo_solar_data(scenario)
-
-    assert data["Sun Elevation (°)"].between(
-        -8, 8
-    ).all()
-
-def test_solar_azimuth_range():
-    """Check solar azimuth values."""
-
-    scenario = create_test_scenario()
-    data = build_demo_solar_data(scenario)
-
-    assert data["Sun Azimuth (°)"].between(
-        0, 360
-    ).all()
-
-
-def test_solar_time_interval():
-    """Check timestamps are one hour apart."""
-
-    scenario = create_test_scenario()
-    data = build_demo_solar_data(scenario)
-
-    assert data["Time (UTC)"].iloc[0] == (
-        scenario.datetime_utc
+    # Calculate real solar position
+    result = calculate_solar_position(
+        latitude,
+        longitude,
+        datetime_utc
     )
 
-    assert data["Time (UTC)"].iloc[-1] == (
-        scenario.datetime_utc + timedelta(hours=24)
-    )
+    # Check returned data
+    assert "Sun Elevation (°)" in result
+    assert "Sun Azimuth (°)" in result
+    assert "Sun Distance (km)" in result
+
+    # Check values
+    assert -90 <= result["Sun Elevation (°)"] <= 90
+
+    assert 0 <= result["Sun Azimuth (°)"] < 360
+
+    assert result["Sun Distance (km)"] > 0

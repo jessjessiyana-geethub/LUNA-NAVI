@@ -301,3 +301,64 @@ def test_timeline_with_terrain_obstruction():
 
     assert results.iloc[0]["Visibility"] == "OBSTRUCTED"
     assert results.iloc[0]["Visible"] == False
+
+
+def test_terrain_with_missing_columns():
+
+    terrain = pd.DataFrame({
+        "azimuth_deg": [90],
+        "distance_km": [0.1]
+    })
+
+    try:
+        calculate_terrain_horizon(
+            terrain_data=terrain,
+            target_azimuth=90
+        )
+    except ValueError:
+        pass
+    else:
+        raise AssertionError(
+            "Expected ValueError for missing terrain columns"
+        )
+
+def test_terrain_with_empty_dataframe():
+
+    terrain = pd.DataFrame()
+
+    horizon = calculate_terrain_horizon(
+        terrain_data=terrain,
+        target_azimuth=90
+    )
+
+    assert horizon is None
+
+def test_terrain_with_invalid_numeric_data():
+
+    terrain = pd.DataFrame({
+        "azimuth_deg": [90],
+        "distance_km": [0.1],
+        "elevation_m": ["invalid"]
+    })
+
+    horizon = calculate_terrain_horizon(
+        terrain_data=terrain,
+        target_azimuth=90
+    )
+
+    assert horizon is None
+
+def test_terrain_with_negative_distance():
+
+    terrain = pd.DataFrame({
+        "azimuth_deg": [90],
+        "distance_km": [-0.1],
+        "elevation_m": [100]
+    })
+
+    horizon = calculate_terrain_horizon(
+        terrain_data=terrain,
+        target_azimuth=90
+    )
+
+    assert horizon is None

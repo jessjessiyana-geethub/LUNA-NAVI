@@ -170,13 +170,13 @@ def get_horizons_earth_visibility(
 
     for row in csv.reader(io.StringIO(table)):
 
-        if len(row) < 3:
+        if len(row) < 5:
             continue
 
         try:
             date = row[0].strip()
-            azimuth = float(row[1].strip())
-            elevation = float(row[2].strip())
+            azimuth = float(row[3].strip())
+            elevation = float(row[4].strip())
 
             rows.append({
                 "Time": date,
@@ -215,6 +215,46 @@ def calculate_terrain_horizon(
     The curvature correction uses a spherical Moon.
     This is a preliminary terrain model.
     """
+
+    if terrain_data is None or terrain_data.empty:
+        return None
+
+    required_columns = {
+        "azimuth_deg",
+        "distance_km",
+        "elevation_m"
+    }
+
+    missing_columns = required_columns - set(terrain_data.columns)
+
+    if missing_columns:
+        raise ValueError(
+            f"Missing terrain columns: {missing_columns}"
+        )
+
+    terrain_data = terrain_data.copy()
+
+    for column in required_columns:
+        terrain_data[column] = pd.to_numeric(
+            terrain_data[column],
+            errors="coerce"
+        )
+
+    terrain_data = terrain_data.replace(
+        [np.inf, -np.inf],
+        np.nan
+    )
+
+    terrain_data = terrain_data.dropna(
+        subset=list(required_columns)
+    )
+
+    terrain_data = terrain_data[
+        terrain_data["distance_km"] > 0
+    ]
+
+    if terrain_data.empty:
+        return None
 
     best_angle = None
 

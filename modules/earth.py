@@ -773,3 +773,56 @@ def render_earth_visibility(scenario):
             "Earth visibility percentage represents sampled "
             "geometric visibility, not radio communication uptime."
         )
+
+
+    # =====================================================
+    # FINAL EVA RESULTS FOR SITE COMPARISON
+    # =====================================================
+
+    st.divider()
+    st.subheader("🌍 Final EVA Results for Site Comparison")
+
+    st.write(
+        "These results are calculated using the selected "
+        "lunar landing site's coordinates and mission time."
+    )
+
+    eva_summary = {
+        "Site Code": scenario.site_code,
+        "Landing Site": scenario.site_name,
+        "Latitude (deg)": scenario.latitude,
+        "Longitude (deg)": scenario.longitude,
+        "Landing Time (UTC)": scenario.datetime_utc.isoformat(),
+        "Analysis Duration (hours)": duration,
+        "Sampling Interval (hours)": step,
+        "Total Samples": statistics["Total Samples"],
+        "Visible Samples": statistics["Visible Samples"],
+        "Obstructed Samples": statistics["Obstructed Samples"],
+        "Visibility Percentage (%)": round(
+            statistics["Visibility Percentage"], 2
+        ),
+        "Terrain Profile Available": terrain_data is not None
+    }
+
+    summary_df = pd.DataFrame([eva_summary])
+
+    st.dataframe(
+        summary_df,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.download_button(
+        "📥 Download EVA Summary for Comparison (CSV)",
+        data=summary_df.to_csv(index=False),
+        file_name=f"EVA_Summary_{scenario.site_code}.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
+
+    st.caption(
+        "Visibility is geometric line-of-sight availability, "
+        "not guaranteed radio communication uptime. "
+        "Terrain obstruction is assessed only when a valid "
+        "terrain profile is supplied."
+    )
